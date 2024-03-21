@@ -1,0 +1,26 @@
+{
+  "name": "portfolio-architecte-sophie-bluel-master-front-end",
+  "version": "1.0.0",
+  "description": "Créez une page web dynamique avec JavaScript.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint FrontEnd/public/*.js",
+    "serverBackEnd": "cd ./Portfolio-architecte-sophie-bluel/Backend/ && npm start",
+    "serverFrontEnd": "node ./FrontEnd/bin/www",
+    "installBackEnd": "npm install --prefix ./Portfolio-architecte-sophie-bluel/Backend/",
+    "installFrontEnd": "npm install --prefix ./FrontEnd/",
+    "installAll": "npm install; npm run installBackEnd; npm run installFrontEnd"
+  },
+  "keywords": [
+    "pageWeb",
+    "dynamique",
+    "JavaScript",
+    "FrontEnd"
+  ],
+  "author": "Dan VIAL",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
