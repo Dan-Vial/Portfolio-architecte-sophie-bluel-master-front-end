@@ -1,9 +1,15 @@
 # Portfolio-architecte-sophie-bluel
 Créez une page web dynamique avec JavaScript.
 
-Après avoir récupéré le REPO:
+Récupéré le REPO exécutez les commandes:
 
-- exécutez la commande `npm run installAll`
+- `git clone --recurse-submodules urlProjectGitHub`
+- `npm run installAll` (env. dev., server back et front)
+
+si vous avez déjat votre backend:
+
+- `npm run installFrontEnd`
+- `npm install` (option env. dev.)
 
 ## Lancement du backend
 Lancer le backend depuis votre terminal 1 instances

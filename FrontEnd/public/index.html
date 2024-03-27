@@ -16,9 +16,12 @@
 		object-src 'none';
 		base-uri 'none';
 		require-trusted-types-for 'script';
-		report-to https://localhost:5678/csp-violation-report-endpoint;
+		report-to https://localhost:3000/csp-violation-report-endpoint;
 	">
 
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
+        integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="./assets/style.css">
 	<script nonce="rAnd0m123" defer src="./assets/app.js"></script>
 </head>
@@ -52,7 +55,7 @@
 			</article>
 		</section>
 		<section id="portfolio">
-			<h2>Mes Projets</h2>
+			<div class="menu-edit"><h2>Mes Projets</h2><div id="mode-edit"><i class="fa-regular fa-pen-to-square"></i> mode édit</div></div>
 			<div id="menu-filter"></div>
 			<div id="gallery" class="gallery">
 				<!-- <figure>

@@ -16,16 +16,15 @@ async function AllLoaded(event) {
             port: '5678',
         });
 
-        app.base = new Base(app);
-        app.filter = new Filter(app);
-        app.gallery = new Gallery(app);
-        app.loginNav = new LoginNav(app);
-        app.loginForm = new LoginForm(app);
-        app.contactNav = new ContactNav(app);
-        app.projetsNav = new ProjetsNav(app);
+        app.addModule(Base, Filter, Gallery, LoginNav);
+        app.addModule(LoginForm, ContactNav, ProjetsNav, ModifierBtn);
+        app.addModule(Modal);
 
+        if (localStorage.getItem('sessionUser')) {
+            app.loginNav.update(event);
+        }
     } catch (error) {
-        console.log('/*** APP ***/\n', error);
+        console.log('/*** APP error ***/\n', error);
     }
 }
 // ----------------------------------------------------------------------------------------------------------------
@@ -40,11 +39,6 @@ class App {
     init() {
         this.documentFragmentHtml();
         this.styleSheetCss();
-
-        // this.base = new Base(this);
-        // this.filter = new Filter(this);
-        // this.gallery = new Gallery(this);
-        // this.login = new Login(this);
     }
 
     documentFragmentHtml() {
@@ -56,9 +50,14 @@ class App {
         document.adoptedStyleSheets = [this.sheet];
     }
 
-    // add() {
-
-    // }
+    addModule(...classModule) {
+        classModule.forEach(element => {
+            if (typeof element === 'undefined') throw 'addModule arg empty.';
+            let nameProperties = `${element.name[0].toLowerCase()}${element.name.slice(1)}`;
+            if (typeof this[nameProperties] !== 'undefined') throw `classModule ${element.name} exist.`;
+            this[nameProperties] = new element(this);
+        });
+    }
 
     /**
      * Architect API 1.0.0 default
@@ -71,45 +70,54 @@ class App {
 
     async getCategories() {
         return await ((await this.#get('categories')).json());
+        // return await this.#get('categories');
     }
 
     async getWorks() {
         return await ((await this.#get('works')).json());
+        // return await  this.#get('works');
     }
 
     async postUsersLogin(email, password) {
-        return await this.#get('users/login', {
-            method: 'post',
-            headers: {
-                'accept': 'application/json',
-                'Content-Type': 'application/json'
-                //cookie 
-                //'Authorization': 'token'
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
+        const sessionUser = localStorage.getItem('sessionUser');
+        if (!sessionUser) {
+            return await this.#get('users/login', {
+                method: 'post',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+        } else {
+            return await this.#get('users/login', {
+                method: 'post',
+                headers: {
+                    'accept': 'application/json',
+                    'Authorization': `Bearer ${JSON.parse(sessionUser).token}`
+                }
+            });
+        }
     }
 
     // protected with token 
     async postWorks(data) {
-        if (typeof this.sessionUser !== 'undefined') {
-            return await this.#get('works', {
-                method: 'post',
-                headers: {
-                    'accept': 'application/json',
-                    'Authorization': `Bearer ${this.sessionUser.token}`,
-                    'Content-Type': 'multipart/form-data'
-                },
-                body: JSON.stringify({
-                    data
-                })
-            });
-        }
-        
-
+        const sessionUser = localStorage.getItem('sessionUser');
+        if (!sessionUser) throw 'Unauthorized post works.';
+        return await this.#get('works', {
+            method: 'post',
+            headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${sessionUser.token}`,
+                'Content-Type': 'multipart/form-data'
+            },
+            body: JSON.stringify({
+                data
+            })
+        });
         //data
         //   -F 'image=' \
         //   -F 'title=' \
@@ -118,16 +126,15 @@ class App {
 
     // protected with token 
     async deleteWorksId(id) {
-        if (typeof this.sessionUser !== 'undefined') {
-            return await this.#get(`works/${id}`, {
-                method: 'delete',
-                headers: {
-                    'accept': 'application/json',
-                    'Authorization': `Bearer ${this.sessionUser.token}`,
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-        }
+        const sessionUser = localStorage.getItem('sessionUser');
+        if (!sessionUser) throw 'Unauthorized delete works.';
+        return await this.#get(`works/${id}`, {
+            method: 'delete',
+            headers: {
+                'accept': '*/*',
+                'Authorization': `Bearer ${JSON.parse(sessionUser).token}`
+            }
+        });
     }
 }
 
@@ -358,7 +365,8 @@ class LoginNav {
     }
 
     update(ev) {
-        if (typeof this.properties.sessionUser === 'undefined') {
+        if (!localStorage.getItem('sessionUser')) {
+            // if (typeof this.properties.sessionUser === 'undefined') {
             this.properties.base.introductionId.classList.toggle('hidden', true);
             this.properties.base.portfolioId.classList.toggle('hidden', true);
             this.properties.base.contactId.classList.toggle('hidden', true);
@@ -373,8 +381,10 @@ class LoginNav {
             location.href = '#login';
         } else {
             if (ev.target.id === this.loginId.id) {
-                delete this.properties.sessionUser;
+                // delete this.properties.sessionUser;
+                localStorage.removeItem('sessionUser');
                 this.properties.filter.filterId.classList.toggle('hidden', false);
+                this.properties.modifierBtn.modeEditId.classList.toggle('hidden', true);
                 this.loginId.textContent = 'Login';
             } else {
                 this.properties.base.introductionId.classList.toggle('hidden', false);
@@ -387,10 +397,11 @@ class LoginNav {
                 }
 
                 this.properties.filter.filterId.classList.toggle('hidden', true);
-                
+                this.properties.modifierBtn.modeEditId.classList.toggle('hidden', false);
+
                 this.loginId.textContent = 'Logout';
                 location.href = '#';
-            }           
+            }
         }
     }
 
@@ -403,6 +414,7 @@ class LoginNav {
             font-weight: 600;
         }`);
     }
+
 }
 
 class LoginForm {
@@ -429,9 +441,9 @@ class LoginForm {
         this.loginSection.setAttribute('class', 'login-form');
 
         this.loginForm = document.createElement('form');
-        this.loginForm.setAttribute('method', 'post');
-        // this.loginForm.setAttribute('id', 'login');
-        this.loginForm.setAttribute('action', 'http://localhost:5678/api/users/login');
+        // this.loginForm.setAttribute('method', 'post');
+        // // this.loginForm.setAttribute('id', 'login');
+        // this.loginForm.setAttribute('action', 'http://localhost:5678/api/users/login');
 
         //title
         const title = document.createElement('h2');
@@ -512,7 +524,8 @@ class LoginForm {
                 const repJs = await response.json();
 
                 if (typeof repJs.message === 'undefined' && typeof repJs.error === 'undefined') {
-                    this.properties.sessionUser = repJs;// localstorage timestam
+                    localStorage.setItem('sessionUser', JSON.stringify(repJs));
+                    // this.properties.sessionUser = repJs;// localstorage timestam
                     this.update(event);
                 } else if (typeof repJs.message !== 'undefined') {
                     emailId.setCustomValidity(repJs.message);
@@ -617,5 +630,243 @@ class ProjetsNav {
 }
 
 class ModifierBtn {
-    
+    modeEditId = document.getElementById('mode-edit');
+
+    constructor(properties) {
+        this.properties = properties;
+        this.init();
+    }
+
+    init() {
+        this.cssRules();
+        this.html();
+        this.js();
+    }
+
+    update(ev) {
+        this.properties.modal.update(ev);
+    }
+
+    html() {
+        this.modeEditId.classList.toggle('hidden', true);
+    }
+
+    js() {
+        this.modeEditId.addEventListener('click', this.update.bind(this));
+    }
+
+    cssRules() {
+        this.properties.sheet.insertRule(`.menu-edit { 
+            display: flex;
+            justify-content: center;
+            gap: 2em;
+            align-items: baseline;
+        }`);
+    }
 }
+
+class Modal {
+    mainId = document.querySelector('#main');
+
+    constructor(properties) {
+        this.properties = properties;
+        this.init();
+    }
+
+    init() {
+        this.cssRules();
+        // this.js();
+    }
+
+    async update(ev) {
+        // this.html(this.properties.gallery.filterWorks['tous']);
+        this.html(await this.properties.getWorks());
+        this.js();
+    }
+
+    html(data) {
+        let chaineHTML = `<section class="modal">
+            <div class="modal-title"><i class="fa-regular fa-pen-to-square"></i> Mode édition</div>
+            <div class="modal-content">
+                <div class="modal-close"><i class="fa-solid fa-xmark"></i></div>
+                <h2>Galerie photo</h2>
+                <div id="modal-galery">
+                    ${ data.map(value => {
+                        return `<div>
+                            <figure>
+                                <img src="${value.imageUrl}" alt="${value.title}">
+                            
+                            </figure>
+                            <form>
+                                <button class="trash-btn" type='submit'><i class="fa-solid fa-trash-can"></i></button>
+                                <input type="hidden" name="id" value="${value.id}" />
+                            </form>
+                        </div>`;
+
+                        
+                    }).join('') }
+                </div>
+                <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>
+            </div>
+        </section>`;
+        var range = document.createRange();
+
+        const sanitizer = trustedTypes.createPolicy("mysanitizer", {
+            createHTML: input => input,
+        });
+
+        this.mainId.appendChild(range.createContextualFragment(sanitizer.createHTML(chaineHTML)));
+    }
+
+    js() {
+        const modal = document.querySelector('.modal');
+        const modalGalleryChilds = document.querySelector('#modal-galery').children;
+        const controller = new AbortController();
+
+        document.querySelector('.modal-close').addEventListener('click', ev => {
+            modal.remove();
+            controller.abort();
+        }, { signal: controller.signal });
+
+        [...modalGalleryChilds].forEach(element => {
+            element.addEventListener('submit', async event => {
+                event.preventDefault();
+                let data = new FormData(event.target);
+                this.properties.deleteWorksId([...data][0][1]);
+
+                modal.remove();
+                controller.abort();
+                this.update(event);
+
+            }, { signal: controller.signal });
+        });
+
+        document.querySelector('#add-project').addEventListener('click', ev => {
+            console.log('add project');
+        });
+
+    }
+
+    cssRules() {
+        this.properties.sheet.insertRule(`.modal { 
+            display: grid;
+            grid-template-rows: auto 1fr;
+            justify-items: center;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.3333);
+            margin: 0;
+            width: 100vw;
+            height: 100vh;   
+            overflow: auto;         
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-content { 
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            background-color: rgb(255, 255, 255);
+            width: 55%;
+            margin: auto;
+            border-radius: 10px;
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-title { 
+            display: grid;
+            grid-template-columns: auto auto;
+            justify-content: center;
+            gap: 1em;
+            width: 100%;
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 255, 255);
+            padding: 1em 0;
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-close {
+            justify-self: end;
+            padding: 1em;
+            font-size: 2em;
+        }`);
+
+        this.properties.sheet.insertRule(`.trash-btn {
+            border: inherit;
+            background-color: black;
+            color: white;
+            border-radius: 2px;
+            width: 2em;
+            height: 2em;
+            font-size: 1em;
+            position: absolute;
+            top: 0.5em;
+            right: 0.5em;
+        }`);
+
+        this.properties.sheet.insertRule(`#modal-galery div {
+            position: relative;
+        }`);
+
+        this.properties.sheet.insertRule(`#modal-galery {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 1em;
+            padding: 3em 0;
+            border-bottom: #B3B3B3 solid 1px;
+            width: 75%;
+            justify-self: center;
+        }`);
+
+        this.properties.sheet.insertRule(`#modal-galery img{
+            width: 100%;
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-content h2{
+            color: inherit;
+            justify-self: center;
+            font-weight: 400 !important;
+        }`);
+
+        this.properties.sheet.insertRule(`#add-project {
+            width: 30%;
+            justify-self: center;
+            margin: 2em;
+        }`);
+    
+    }
+}
+
+class ModalGallery {
+    // <h2>Galerie photo</h2>
+    //             <div id="modal-galery">
+    //                 ${ data.map(value => {
+    //                     return `<div>
+    //                         <figure>
+    //                             <img src="${value.imageUrl}" alt="${value.title}">
+                            
+    //                         </figure>
+    //                         <form>
+    //                             <button class="trash-btn" type='submit'><i class="fa-solid fa-trash-can"></i></button>
+    //                             <input type="hidden" name="id" value="${value.id}" />
+    //                         </form>
+    //                     </div>`;
+
+                        
+    //                 }).join('') }
+    //             </div>
+    //             <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>
+
+}
+
+class ModalAddPhoto {
+
+}
+
+
+
+
+
+
+
+
+
+
