@@ -1,5 +1,6 @@
 'use strict';
 // ----------------------------------------------------------------------------------------------------------------
+document.addEventListener('securitypolicyviolation', console.error.bind(console));
 document.addEventListener('DOMContentLoaded', DOMLoaded, true);
 window.addEventListener('load', AllLoaded, true);
 
@@ -18,9 +19,10 @@ async function AllLoaded(event) {
 
         app.addModule(Base, Filter, Gallery, LoginNav);
         app.addModule(LoginForm, ContactNav, ProjetsNav, ModifierBtn);
-        app.addModule(Modal);
+        app.addModule(Modal, ModalGallery, ModalAddPhoto);
 
         if (localStorage.getItem('sessionUser')) {
+            // app.postUsersLogin('', '');
             app.loginNav.update(event);
         }
     } catch (error) {
@@ -38,11 +40,20 @@ class App {
 
     init() {
         this.documentFragmentHtml();
+        this.rangeHtml();
         this.styleSheetCss();
     }
 
     documentFragmentHtml() {
         this.fragment = new DocumentFragment();
+    }
+
+    rangeHtml() {
+        this.range = document.createRange();
+
+        this.sanitizer = trustedTypes.createPolicy("mysanitizer", {
+            createHTML: input => input,
+        });
     }
 
     styleSheetCss() {
@@ -57,6 +68,10 @@ class App {
             if (typeof this[nameProperties] !== 'undefined') throw `classModule ${element.name} exist.`;
             this[nameProperties] = new element(this);
         });
+    }
+
+    addHtml(parent, stringHtml) {
+        parent.appendChild(this.range.createContextualFragment(this.sanitizer.createHTML(stringHtml)));
     }
 
     /**
@@ -252,11 +267,12 @@ class Filter {
         this.properties.sheet.insertRule(`#menu-filter { 
             display: flex;
             justify-content: center;
+            margin-top: 2em;
             margin-bottom: 3em;
         }`);
 
         this.properties.sheet.insertRule(`.filter-btn { 
-            padding: 1em;
+            padding: 0.5em;
             margin: 0.5em;
             border: 1px solid ${this.properties.base.color1};
             border-radius: 2em;
@@ -441,9 +457,6 @@ class LoginForm {
         this.loginSection.setAttribute('class', 'login-form');
 
         this.loginForm = document.createElement('form');
-        // this.loginForm.setAttribute('method', 'post');
-        // // this.loginForm.setAttribute('id', 'login');
-        // this.loginForm.setAttribute('action', 'http://localhost:5678/api/users/login');
 
         //title
         const title = document.createElement('h2');
@@ -467,7 +480,7 @@ class LoginForm {
 
         //password
         const passwordLabel = document.createElement('label');
-        passwordLabel.setAttribute('for', 'password');
+        passwordLabel.setAttribute('for', 'password-login');
         passwordLabel.textContent = 'Mot de passe';
         this.loginForm.appendChild(passwordLabel);
 
@@ -483,6 +496,8 @@ class LoginForm {
         const submit = document.createElement('input');
         submit.setAttribute('type', 'submit');
         submit.setAttribute('value', 'Se connecter');
+        submit.setAttribute('class', 'filter-btn');
+
         this.loginForm.appendChild(submit);
 
         //mdpo
@@ -534,7 +549,6 @@ class LoginForm {
                     passwordId.setCustomValidity('Unauthorized');
                     passwordId.reportValidity();
                 }
-                console.log(repJs);
             }
         });
     }
@@ -547,14 +561,16 @@ class LoginForm {
             margin: auto;
         }`);
 
-        this.properties.sheet.insertRule(`.login-form input { 
+        this.properties.sheet.insertRule(`.login-form input, 
+        #form-project input,
+        #form-project select { 
             height: 50px;
             font-size: 1.2em;
             border: none;
             box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.09);
         }`);
 
-        this.properties.sheet.insertRule(`.login-form label { 
+        this.properties.sheet.insertRule(`.login-form label, #form-project label { 
             margin: 2em 0 1em 0;
         }`);
 
@@ -675,80 +691,41 @@ class Modal {
 
     init() {
         this.cssRules();
-        // this.js();
     }
 
-    async update(ev) {
-        // this.html(this.properties.gallery.filterWorks['tous']);
-        this.html(await this.properties.getWorks());
+    update(ev) {
+        this.html();
         this.js();
+        this.properties.modalGallery.update(ev);
     }
 
     html(data) {
-        let chaineHTML = `<section class="modal">
-            <div class="modal-title"><i class="fa-regular fa-pen-to-square"></i> Mode édition</div>
-            <div class="modal-content">
-                <div class="modal-close"><i class="fa-solid fa-xmark"></i></div>
-                <h2>Galerie photo</h2>
-                <div id="modal-galery">
-                    ${ data.map(value => {
-                        return `<div>
-                            <figure>
-                                <img src="${value.imageUrl}" alt="${value.title}">
-                            
-                            </figure>
-                            <form>
-                                <button class="trash-btn" type='submit'><i class="fa-solid fa-trash-can"></i></button>
-                                <input type="hidden" name="id" value="${value.id}" />
-                            </form>
-                        </div>`;
-
-                        
-                    }).join('') }
+        this.properties.addHtml(this.mainId,
+            `<section class="modal-bg">
+                <div class="modal-title"><i class="fa-regular fa-pen-to-square"></i> Mode édition</div>
+                <div class="modal">
+                    <div class="modal-bar">
+                        <div class="modal-back modal-btn"><i class="fa-solid fa-arrow-left"></i></div>
+                        <div class="modal-close modal-btn"><i class="fa-solid fa-xmark"></i></div>
+                    </div>
+                    <div id="modal-content"></div>
                 </div>
-                <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>
-            </div>
-        </section>`;
-        var range = document.createRange();
-
-        const sanitizer = trustedTypes.createPolicy("mysanitizer", {
-            createHTML: input => input,
-        });
-
-        this.mainId.appendChild(range.createContextualFragment(sanitizer.createHTML(chaineHTML)));
+            </section>`
+        );
     }
 
     js() {
-        const modal = document.querySelector('.modal');
-        const modalGalleryChilds = document.querySelector('#modal-galery').children;
-        const controller = new AbortController();
+        this.modalBg = document.querySelector('.modal-bg');
+        this.controller = new AbortController();
 
         document.querySelector('.modal-close').addEventListener('click', ev => {
-            modal.remove();
-            controller.abort();
-        }, { signal: controller.signal });
-
-        [...modalGalleryChilds].forEach(element => {
-            element.addEventListener('submit', async event => {
-                event.preventDefault();
-                let data = new FormData(event.target);
-                this.properties.deleteWorksId([...data][0][1]);
-
-                modal.remove();
-                controller.abort();
-                this.update(event);
-
-            }, { signal: controller.signal });
-        });
-
-        document.querySelector('#add-project').addEventListener('click', ev => {
-            console.log('add project');
-        });
-
+            this.modalBg.remove();
+            this.controller.abort();
+        }, { signal: this.controller.signal });     
     }
 
     cssRules() {
-        this.properties.sheet.insertRule(`.modal { 
+        this.properties.sheet.insertRule(`.modal-bg { 
             display: grid;
             grid-template-rows: auto 1fr;
             justify-items: center;
@@ -763,9 +740,9 @@ class Modal {
             overflow: auto;         
         }`);
 
-        this.properties.sheet.insertRule(`.modal-content { 
+        this.properties.sheet.insertRule(`.modal { 
             display: grid;
-            grid-template-rows: auto auto 1fr auto;
+            grid-template-rows: auto 1fr;
             background-color: rgb(255, 255, 255);
             width: 55%;
             margin: auto;
@@ -784,11 +761,91 @@ class Modal {
         }`);
 
         this.properties.sheet.insertRule(`.modal-close {
-            justify-self: end;
+
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-bar {
+            display: flex;
+            justify-content: space-between;
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-back {
+            visibility: hidden;
+        }`);
+
+        this.properties.sheet.insertRule(`.modal-btn {
             padding: 1em;
             font-size: 2em;
         }`);
+    }
+}
 
+class ModalGallery {
+    modalContentId = document.querySelector('#modal-content');
+
+    constructor(properties) {
+        this.properties = properties;
+        this.init();
+    }
+
+    init() {
+        this.cssRules();
+    }
+
+    async update(ev) {
+        // this.html(this.properties.gallery.filterWorks['tous']);
+        this.html(await this.properties.getWorks());
+        this.js();
+    }
+
+    html(data) {
+        this.modalContentId = document.querySelector('#modal-content');
+        this.properties.addHtml(this.modalContentId,
+            `<h2>Galerie photo</h2>
+            <div id="modal-gallery">
+                ${ data.map(value => {
+                    return `<div data-id="${value.id}">
+                        <figure>
+                            <img src="${value.imageUrl}" alt="${value.title}">
+                        
+                        </figure>
+                        <form>         
+                            <button class="trash-btn" type='submit'><i class="fa-solid fa-trash-can"></i></button>
+                            <input type="hidden" name="id" value="${value.id}" />
+                        </form>
+                    </div>`;
+
+                    
+                }).join('') }
+            </div>
+            <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>`
+        );
+    }
+
+    js() {
+        const modalGalleryChilds = document.querySelector('#modal-gallery').children;
+
+        [...modalGalleryChilds].forEach(element => {
+            element.addEventListener('submit', async event => {
+                event.preventDefault();
+                let data = new FormData(event.target);
+                this.properties.deleteWorksId([...data][0][1]);
+                element.remove();
+    
+                //update gallery
+                this.properties.gallery.update({ target: { id: 'tous' } });
+
+            }, { signal: this.properties.modal.controller.signal });
+        });
+
+        document.querySelector('#add-project').addEventListener('click', ev => {
+            this.modalContentId.replaceChildren();
+            this.properties.modalAddPhoto.update(ev);
+            document.querySelector('.input-img').classList.toggle('hidden');
+        }, { signal: this.properties.modal.controller.signal });
+    }  
+    
+    cssRules() {
         this.properties.sheet.insertRule(`.trash-btn {
             border: inherit;
             background-color: black;
@@ -802,71 +859,182 @@ class Modal {
             right: 0.5em;
         }`);
 
-        this.properties.sheet.insertRule(`#modal-galery div {
+        this.properties.sheet.insertRule(`#modal-gallery div {
             position: relative;
         }`);
 
-        this.properties.sheet.insertRule(`#modal-galery {
+        this.properties.sheet.insertRule(`#modal-content {
+            display: grid;
+        }`);
+
+        this.properties.sheet.insertRule(`#modal-gallery {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
             gap: 1em;
             padding: 3em 0;
             border-bottom: #B3B3B3 solid 1px;
-            width: 75%;
+            width: 65%;
             justify-self: center;
         }`);
 
-        this.properties.sheet.insertRule(`#modal-galery img{
+        this.properties.sheet.insertRule(`#modal-gallery img{
             width: 100%;
         }`);
 
-        this.properties.sheet.insertRule(`.modal-content h2{
+        this.properties.sheet.insertRule(`.modal h2{
             color: inherit;
             justify-self: center;
             font-weight: 400 !important;
         }`);
 
-        this.properties.sheet.insertRule(`#add-project {
-            width: 30%;
+        this.properties.sheet.insertRule(`#add-project, #valider-project {
             justify-self: center;
             margin: 2em;
+            width: 30%;
         }`);
-    
     }
-}
-
-class ModalGallery {
-    // <h2>Galerie photo</h2>
-    //             <div id="modal-galery">
-    //                 ${ data.map(value => {
-    //                     return `<div>
-    //                         <figure>
-    //                             <img src="${value.imageUrl}" alt="${value.title}">
-                            
-    //                         </figure>
-    //                         <form>
-    //                             <button class="trash-btn" type='submit'><i class="fa-solid fa-trash-can"></i></button>
-    //                             <input type="hidden" name="id" value="${value.id}" />
-    //                         </form>
-    //                     </div>`;
-
-                        
-    //                 }).join('') }
-    //             </div>
-    //             <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>
 
 }
 
 class ModalAddPhoto {
+    constructor(properties) {
+        this.properties = properties;
+        this.init();
+    }
 
+    init() {
+        this.cssRules();
+    }
+
+    async update(ev) {
+        this.html(await this.properties.getCategories());
+        this.js();
+    }
+
+    html(data) {
+        this.modalContentId = document.querySelector('#modal-content');
+        this.properties.addHtml(this.modalContentId,
+            `<h2>Ajout photo</h2>
+            <div id="modal-project">
+            <form id="form-project">
+
+                <div class="input-img">
+                    <i class="fa-regular fa-image"></i>
+
+                    <label for="image">+ Ajouter photo</label>
+                    <input type="file" id="image" name="image" value="+ Ajouter photo" accept="image/png, image/jpg">
+
+                    <div>jpg, png : 4mo max</div>
+                </div>
+                
+                <label for="title">Title</label>
+                <input type="text" name="title" id="title">
+
+                <label for="category">Category</label>
+                <select name="category" id="category">
+                    <option value=""></option>
+
+                    ${ data.map(value => {
+                        return `<option value="${value.name.toLowerCase()}">${value.name}</option>`;
+                    }).join('') }
+
+                </select>
+
+            </form>
+            </div>
+            <input type="submit" form="form-project" id="valider-project" class="filter-btn filter-btn-selected" disabled value="Valider">`
+        );
+    }
+
+    js() {
+        this.backmodal = document.querySelector('.modal-back');
+        this.backmodal.classList.toggle('modal-bachttp://localhost:3000/#k');
+
+        const bm = ev => {
+            this.modalContentId.replaceChildren();
+            this.properties.modalGallery.update(ev);
+            this.backmodal.classList.toggle('modal-back');
+            this.backmodal.removeEventListener('click', bm);
+        };
+        this.backmodal.addEventListener('click', bm, { signal: this.properties.modal.controller.signal });
+
+        let addImage = document.querySelector('#image');
+        let ai = ev => {
+            let file = ev.target.files[0];
+            console.log(file);
+            var reader = new FileReader();
+            reader.onload = function (evt) {
+                let img = document.createElement('img');
+                img.setAttribute('src', `data:${file.type};base64,${btoa(evt.target.result)}`);
+                console.log(addImage.parentElement.children);
+                [...addImage.parentElement.children].forEach(element => {
+                    element.classList.toggle('hidden');
+                });
+                addImage.parentElement.insertBefore(img, addImage.parentElement.firstElementChild);
+                // document.querySelector('.input-img').classList.toggle('hidden');
+                // document.querySelector('#form-project').innerHTML += `<img src="data:${file.type};base64,${btoa(evt.target.result)}">`;
+            };
+            reader.readAsBinaryString(file);
+
+        };
+        // addImage.addEventListener('click', ai, { signal: this.properties.modal.controller.signal });
+        addImage.addEventListener('change', ai, { signal: this.properties.modal.controller.signal });
+    }
+
+    cssRules() {
+        this.properties.sheet.insertRule(`#modal-project {
+            display: grid;
+            padding: 3em 0px;
+            border-bottom: 1px solid rgb(179, 179, 179);
+            width: 65%;
+            justify-self: center;
+        }`);
+
+        this.properties.sheet.insertRule(`#form-project {
+            display: grid;
+        }`);
+
+        this.properties.sheet.insertRule(`input[disabled] {
+            background-color : #A7A7A7 !important;
+            border-color: #A7A7A7 !important;
+        }`);
+
+        this.properties.sheet.insertRule(`.input-img {
+            display: flex;
+            text-align: center;
+            flex-direction: column;
+            background-color: #E8F1F6;
+            padding: 2em;
+        }`);
+
+        this.properties.sheet.insertRule(`.input-img i {
+            font-size: 5em;
+            color: #B9C5CC;
+        }`);
+
+        this.properties.sheet.insertRule(`.input-img label {
+            align-self: center;
+            height: inherit !important;
+            box-shadow: inherit !important;
+            background-color: rgb(203, 214, 220) !important;
+            color: rgb(48, 102, 133) !important;
+            padding: 1em;
+            border-radius: 2em;
+            font-weight: 700;
+            font-family: Syne;
+        }`); 
+
+
+        this.properties.sheet.insertRule(`#form-project input[type=file] {
+            height: 0;
+            padding: 0;
+            opacity: 0;
+        }`);
+
+        this.properties.sheet.insertRule(`#form-project img {
+            width: 33.33%;
+            object-fit: cover;
+            align-self: center;
+        }`);
+    }
 }
-
-
-
-
-
-
-
-
-
-
