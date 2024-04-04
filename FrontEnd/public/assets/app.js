@@ -22,7 +22,6 @@ async function AllLoaded(event) {
         app.addModule(Modal, ModalGallery, ModalAddPhoto);
 
         if (localStorage.getItem('sessionUser')) {
-            // app.postUsersLogin('', '');
             app.loginNav.update(event);
         }
     } catch (error) {
@@ -72,6 +71,17 @@ class App {
 
     addHtml(parent, stringHtml) {
         parent.appendChild(this.range.createContextualFragment(this.sanitizer.createHTML(stringHtml)));
+    }
+
+    reportValidityInForm(elementForm) {
+        let valid = true;
+        for (const input of elementForm) {
+            valid = input.reportValidity();
+            if (!valid) {
+                break;
+            }
+        }
+        return valid;
     }
 
     /**
@@ -382,7 +392,6 @@ class LoginNav {
 
     update(ev) {
         if (!localStorage.getItem('sessionUser')) {
-            // if (typeof this.properties.sessionUser === 'undefined') {
             this.properties.base.introductionId.classList.toggle('hidden', true);
             this.properties.base.portfolioId.classList.toggle('hidden', true);
             this.properties.base.contactId.classList.toggle('hidden', true);
@@ -393,11 +402,8 @@ class LoginNav {
             }
 
             this.loginId.classList.toggle('nav-btn-selected', true);
-
-            location.href = '#login';
         } else {
             if (ev.target.id === this.loginId.id) {
-                // delete this.properties.sessionUser;
                 localStorage.removeItem('sessionUser');
                 this.properties.filter.filterId.classList.toggle('hidden', false);
                 this.properties.modifierBtn.modeEditId.classList.toggle('hidden', true);
@@ -416,7 +422,6 @@ class LoginNav {
                 this.properties.modifierBtn.modeEditId.classList.toggle('hidden', false);
 
                 this.loginId.textContent = 'Logout';
-                location.href = '#';
             }
         }
     }
@@ -526,15 +531,7 @@ class LoginForm {
         this.loginForm.addEventListener('submit', async event => {
             event.preventDefault();
 
-            let valid = true;
-            for (const input of event.target) {
-                valid = input.reportValidity();
-                if (!valid) {
-                    break;
-                }
-            }
-
-            if (valid) {
+            if (this.properties.reportValidityInForm(event.target)) {
                 const response = await this.properties.postUsersLogin(emailId.value, passwordId.value);
                 const repJs = await response.json();
 
@@ -721,7 +718,7 @@ class Modal {
         document.querySelector('.modal-close').addEventListener('click', ev => {
             this.modalBg.remove();
             this.controller.abort();
-        }, { signal: this.controller.signal });     
+        }, { signal: this.controller.signal });
     }
 
     cssRules() {
@@ -803,8 +800,8 @@ class ModalGallery {
         this.properties.addHtml(this.modalContentId,
             `<h2>Galerie photo</h2>
             <div id="modal-gallery">
-                ${ data.map(value => {
-                    return `<div data-id="${value.id}">
+                ${data.map(value => {
+                return `<div data-id="${value.id}">
                         <figure>
                             <img src="${value.imageUrl}" alt="${value.title}">
                         
@@ -815,8 +812,8 @@ class ModalGallery {
                         </form>
                     </div>`;
 
-                    
-                }).join('') }
+
+            }).join('')}
             </div>
             <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>`
         );
@@ -825,26 +822,35 @@ class ModalGallery {
     js() {
         const modalGalleryChilds = document.querySelector('#modal-gallery').children;
 
-        [...modalGalleryChilds].forEach(element => {
-            element.addEventListener('submit', async event => {
-                event.preventDefault();
-                let data = new FormData(event.target);
-                this.properties.deleteWorksId([...data][0][1]);
-                element.remove();
-    
-                //update gallery
-                this.properties.gallery.update({ target: { id: 'tous' } });
+        let modalGalleryChildsCb = async event => {
+            event.preventDefault();
+            let data = new FormData(event.target);
+            let idImg = [...data][0][1];
+            this.properties.deleteWorksId(idImg);
+            document.querySelector(`[data-id="${idImg}"]`).remove();
 
-            }, { signal: this.properties.modal.controller.signal });
+            //update gallery
+            this.properties.gallery.update({ target: { id: 'tous' } });
+
+        };
+        [...modalGalleryChilds].forEach(element => {
+            element.addEventListener('submit', modalGalleryChildsCb, { signal: this.properties.modal.controller.signal });
         });
 
-        document.querySelector('#add-project').addEventListener('click', ev => {
+        let addProjetCb = ev => {
+
+            document.querySelector('#add-project').removeEventListener('click', addProjetCb);
+
+            [...modalGalleryChilds].forEach(element => {
+                element.removeEventListener('submit', modalGalleryChildsCb);
+            });
+
             this.modalContentId.replaceChildren();
             this.properties.modalAddPhoto.update(ev);
-            document.querySelector('.input-img').classList.toggle('hidden');
-        }, { signal: this.properties.modal.controller.signal });
-    }  
-    
+        };
+        document.querySelector('#add-project').addEventListener('click', addProjetCb, { signal: this.properties.modal.controller.signal });
+    }
+
     cssRules() {
         this.properties.sheet.insertRule(`.trash-btn {
             border: inherit;
@@ -922,21 +928,21 @@ class ModalAddPhoto {
                     <i class="fa-regular fa-image"></i>
 
                     <label for="image">+ Ajouter photo</label>
-                    <input type="file" id="image" name="image" value="+ Ajouter photo" accept="image/png, image/jpg">
+                    <input type="file" id="image" name="image" value="+ Ajouter photo" accept="image/png, image/jpg" required>
 
                     <div>jpg, png : 4mo max</div>
                 </div>
                 
                 <label for="title">Title</label>
-                <input type="text" name="title" id="title">
+                <input type="text" name="title" id="title" required>
 
                 <label for="category">Category</label>
-                <select name="category" id="category">
+                <select name="category" id="category" required>
                     <option value=""></option>
 
-                    ${ data.map(value => {
-                        return `<option value="${value.name.toLowerCase()}">${value.name}</option>`;
-                    }).join('') }
+                    ${data.map(value => {
+                return `<option value="${value.name.toLowerCase()}">${value.name}</option>`;
+            }).join('')}
 
                 </select>
 
@@ -948,37 +954,65 @@ class ModalAddPhoto {
 
     js() {
         this.backmodal = document.querySelector('.modal-back');
-        this.backmodal.classList.toggle('modal-bachttp://localhost:3000/#k');
-
-        const bm = ev => {
-            this.modalContentId.replaceChildren();
-            this.properties.modalGallery.update(ev);
-            this.backmodal.classList.toggle('modal-back');
-            this.backmodal.removeEventListener('click', bm);
-        };
-        this.backmodal.addEventListener('click', bm, { signal: this.properties.modal.controller.signal });
-
         let addImage = document.querySelector('#image');
-        let ai = ev => {
+
+        const addImageCb = ev => {
             let file = ev.target.files[0];
-            console.log(file);
             var reader = new FileReader();
             reader.onload = function (evt) {
                 let img = document.createElement('img');
                 img.setAttribute('src', `data:${file.type};base64,${btoa(evt.target.result)}`);
-                console.log(addImage.parentElement.children);
                 [...addImage.parentElement.children].forEach(element => {
                     element.classList.toggle('hidden');
                 });
                 addImage.parentElement.insertBefore(img, addImage.parentElement.firstElementChild);
-                // document.querySelector('.input-img').classList.toggle('hidden');
-                // document.querySelector('#form-project').innerHTML += `<img src="data:${file.type};base64,${btoa(evt.target.result)}">`;
             };
             reader.readAsBinaryString(file);
-
+            document.querySelector('.input-img').classList.toggle('zeropadding');
         };
-        // addImage.addEventListener('click', ai, { signal: this.properties.modal.controller.signal });
-        addImage.addEventListener('change', ai, { signal: this.properties.modal.controller.signal });
+
+        const backmodalCB = ev => {
+            this.backmodal.classList.toggle('modal-back');
+            addImage.removeEventListener('change', addImageCb);
+            this.backmodal.removeEventListener('click', backmodalCB);
+
+            this.modalContentId.replaceChildren();
+            this.properties.modalGallery.update(ev);
+        };
+        this.backmodal.addEventListener('click', backmodalCB, { signal: this.properties.modal.controller.signal });
+
+        addImage.addEventListener('change', addImageCb, { signal: this.properties.modal.controller.signal });
+        this.backmodal.classList.toggle('modal-back');
+
+        document.querySelector('#form-project').addEventListener('submit', async event => {
+            event.preventDefault();
+
+            if (this.properties.reportValidityInForm(event.target)) {
+                console.log(event);
+            }
+        }, { signal: this.properties.modal.controller.signal });
+
+
+        for (const input of document.querySelector('#form-project')) {
+            input.addEventListener('change', event => {
+                let valid = true
+                for (const input of document.querySelector('#form-project')) {
+                    console.log(input.value);
+                    if(input.value === '') {
+                        valid = false;
+                        break;
+                    }
+                }
+                
+                if(valid) {
+                    document.querySelector('#valider-project').removeAttribute("disabled");
+                } else {
+                    document.querySelector('#valider-project').setAttribute("disabled", '');
+                }
+
+            }, { signal: this.properties.modal.controller.signal });
+        }
+
     }
 
     cssRules() {
@@ -1018,15 +1052,15 @@ class ModalAddPhoto {
             box-shadow: inherit !important;
             background-color: rgb(203, 214, 220) !important;
             color: rgb(48, 102, 133) !important;
-            padding: 1em;
+            padding: 1em 3em;
             border-radius: 2em;
             font-weight: 700;
             font-family: Syne;
-        }`); 
+        }`);
 
 
         this.properties.sheet.insertRule(`#form-project input[type=file] {
-            height: 0;
+            height: 1px;
             padding: 0;
             opacity: 0;
         }`);
@@ -1035,6 +1069,10 @@ class ModalAddPhoto {
             width: 33.33%;
             object-fit: cover;
             align-self: center;
+        }`);
+
+        this.properties.sheet.insertRule(`.zeropadding {
+            padding: 0 !important;
         }`);
     }
 }
