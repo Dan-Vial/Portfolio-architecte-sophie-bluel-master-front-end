@@ -6,6 +6,9 @@ window.addEventListener('load', AllLoaded, true);
 
 async function DOMLoaded(event) {
     console.log('DOMLoaded.');
+    if (document.location.hash !== '') {
+        history.pushState("", document.title, window.location.pathname);
+    }
 }
 
 async function AllLoaded(event) {
@@ -38,21 +41,20 @@ class App {
     }
 
     init() {
-        this.documentFragmentHtml();
+        this.fragment = new DocumentFragment();
         this.rangeHtml();
         this.styleSheetCss();
-    }
-
-    documentFragmentHtml() {
-        this.fragment = new DocumentFragment();
     }
 
     rangeHtml() {
         this.range = document.createRange();
 
-        this.sanitizer = trustedTypes.createPolicy("mysanitizer", {
-            createHTML: input => input,
-        });
+        // Content-Security-Policy: require-trusted-types-for 'script';report-to in chrome using trustedTypes 
+        // trustedTypes not implemented in firefox
+        
+        // this.sanitizer = trustedTypes.createPolicy("mysanitizer", {
+        //     createHTML: input => input, // DOMPurify
+        // });
     }
 
     styleSheetCss() {
@@ -70,7 +72,8 @@ class App {
     }
 
     addHtml(parent, stringHtml) {
-        parent.appendChild(this.range.createContextualFragment(this.sanitizer.createHTML(stringHtml)));
+        parent.appendChild(this.range.createContextualFragment(stringHtml));
+        // parent.appendChild(this.range.createContextualFragment(this.sanitizer.createHTML(stringHtml)));
     }
 
     reportValidityInForm(elementForm) {
@@ -89,12 +92,11 @@ class App {
      */
     async #get(routeName, opts = {}) {
         return await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts);
-        // const reponse = await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts);
-        // return await reponse.json();
+        // return await (await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts)).json();
     }
 
     async getCategories() {
-        return await ((await this.#get('categories')).json());
+        return await (await this.#get('categories')).json();
         // return await this.#get('categories');
     }
 
@@ -136,17 +138,12 @@ class App {
             method: 'post',
             headers: {
                 'accept': 'application/json',
-                'Authorization': `Bearer ${sessionUser.token}`,
-                'Content-Type': 'multipart/form-data'
+                'Authorization': `Bearer ${JSON.parse(sessionUser).token}`
+                // si défini bug. L'API fetch fait le travail avec FormData.
+                // 'Content-Type': 'multipart/form-data;boundary="mcustomboundary"'
             },
-            body: JSON.stringify({
-                data
-            })
+            body: data
         });
-        //data
-        //   -F 'image=' \
-        //   -F 'title=' \
-        //   -F 'category='
     }
 
     // protected with token 
@@ -316,7 +313,6 @@ class Gallery {
     async update(ev) {
         this.clear();
 
-        // this.#updateFilterCss(ev);
         const buttonList = this.properties.filter.filterId.childNodes;
 
         buttonList.forEach(element => {
@@ -328,7 +324,6 @@ class Gallery {
         });
 
         this.works = await this.properties.getWorks();
-        // this.filterGallery();
         this.properties.filter.category.forEach(element => {
             if (element.id === 0) {
                 this.filterWorks[element.name.toLowerCase()] = [...this.works];
@@ -386,7 +381,6 @@ class LoginNav {
 
     init() {
         this.cssRules();
-        // this.html();
         this.js();
     }
 
@@ -407,6 +401,11 @@ class LoginNav {
                 localStorage.removeItem('sessionUser');
                 this.properties.filter.filterId.classList.toggle('hidden', false);
                 this.properties.modifierBtn.modeEditId.classList.toggle('hidden', true);
+
+                for (const elm of this.loginId.parentNode.children) {
+                    elm.classList.toggle('nav-btn-selected', false);
+                }
+
                 this.loginId.textContent = 'Login';
             } else {
                 this.properties.base.introductionId.classList.toggle('hidden', false);
@@ -423,6 +422,9 @@ class LoginNav {
 
                 this.loginId.textContent = 'Logout';
             }
+        }
+        if (document.location.hash !== '') {
+            history.pushState("", document.title, window.location.pathname);
         }
     }
 
@@ -941,7 +943,7 @@ class ModalAddPhoto {
                     <option value=""></option>
 
                     ${data.map(value => {
-                return `<option value="${value.name.toLowerCase()}">${value.name}</option>`;
+                return `<option value="${value.id}">${value.name}</option>`;
             }).join('')}
 
                 </select>
@@ -955,19 +957,37 @@ class ModalAddPhoto {
     js() {
         this.backmodal = document.querySelector('.modal-back');
         let addImage = document.querySelector('#image');
+        let validerProject = document.querySelector('#valider-project');
+        let formProject = document.querySelector('#form-project');
 
         const addImageCb = ev => {
             let file = ev.target.files[0];
-            var reader = new FileReader();
-            reader.onload = function (evt) {
-                let img = document.createElement('img');
-                img.setAttribute('src', `data:${file.type};base64,${btoa(evt.target.result)}`);
-                [...addImage.parentElement.children].forEach(element => {
-                    element.classList.toggle('hidden');
-                });
-                addImage.parentElement.insertBefore(img, addImage.parentElement.firstElementChild);
-            };
-            reader.readAsBinaryString(file);
+
+            /**
+             * MINIATURE: FileReader to base64
+             */
+            // var reader = new FileReader();
+            // reader.onload = function (evt) {
+            //     let img = document.createElement('img');
+            //     // img.setAttribute('src', `data:${file.type};base64,${btoa(evt.target.result)}`);
+            //     img.setAttribute('src', URL.createObjectURL(file));
+            //     [...addImage.parentElement.children].forEach(element => {
+            //         element.classList.toggle('hidden');
+            //     });
+            //     addImage.parentElement.insertBefore(img, addImage.parentElement.firstElementChild);
+            // };
+            // reader.readAsBinaryString(file);
+
+            /**
+             * MINIATURE: createObjectURL
+             */
+            let img = document.createElement('img');
+            img.setAttribute('src', URL.createObjectURL(file));
+            [...addImage.parentElement.children].forEach(element => {
+                element.classList.toggle('hidden');
+            });
+            addImage.parentElement.insertBefore(img, addImage.parentElement.firstElementChild);
+
             document.querySelector('.input-img').classList.toggle('zeropadding');
         };
 
@@ -984,35 +1004,39 @@ class ModalAddPhoto {
         addImage.addEventListener('change', addImageCb, { signal: this.properties.modal.controller.signal });
         this.backmodal.classList.toggle('modal-back');
 
-        document.querySelector('#form-project').addEventListener('submit', async event => {
+        formProject.addEventListener('submit', async event => {
             event.preventDefault();
 
             if (this.properties.reportValidityInForm(event.target)) {
-                console.log(event);
+                let data = new FormData(event.target);
+
+                let res = await this.properties.postWorks(data);
+                this.properties.gallery.update({ target: { id: 'tous' } });
+                document.querySelector('.modal-close').dispatchEvent(new MouseEvent('click'));
+
+                // console.log(JSON.stringify(await res.json(), null, '\t'));
             }
+
         }, { signal: this.properties.modal.controller.signal });
 
-
-        for (const input of document.querySelector('#form-project')) {
+        for (const input of formProject) {
             input.addEventListener('change', event => {
                 let valid = true
-                for (const input of document.querySelector('#form-project')) {
-                    console.log(input.value);
-                    if(input.value === '') {
+                for (const input of formProject) {
+                    if (input.value === '') {
                         valid = false;
                         break;
                     }
                 }
-                
-                if(valid) {
-                    document.querySelector('#valider-project').removeAttribute("disabled");
+
+                if (valid) {
+                    validerProject.removeAttribute("disabled");
                 } else {
-                    document.querySelector('#valider-project').setAttribute("disabled", '');
+                    validerProject.setAttribute("disabled", '');
                 }
 
             }, { signal: this.properties.modal.controller.signal });
         }
-
     }
 
     cssRules() {
