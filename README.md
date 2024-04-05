@@ -24,11 +24,13 @@ Lien pour voir la documentation Swagger:
 
 **Compte de test pour Sophie Bluel**
 
+email: 
 ```
-email: sophie.bluel@test.tld
+sophie.bluel@test.tld
 ```
+password:
 ```
-password: S0phie 
+S0phie 
 ```
 
 ## Lancement du frontend
