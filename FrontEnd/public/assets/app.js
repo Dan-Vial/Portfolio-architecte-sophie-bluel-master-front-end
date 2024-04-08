@@ -24,7 +24,7 @@ async function AllLoaded(event) {
         app.addModule(LoginForm, ContactNav, ProjetsNav, ModifierBtn);
         app.addModule(Modal, ModalGallery, ModalAddPhoto);
 
-        if (localStorage.getItem('sessionUser')) {
+        if (app.isSessionUser()) {
             app.loginNav.update(event);
         }
     } catch (error) {
@@ -32,7 +32,9 @@ async function AllLoaded(event) {
     }
 }
 // ----------------------------------------------------------------------------------------------------------------
+
 class App {
+    expired = 86400000; // isSessionUser: 86400000 ms = 24h / 60000 ms = 1m
     constructor({ protocol, host, port }) {
         this.protocol = protocol;
         this.host = host;
@@ -85,6 +87,14 @@ class App {
             }
         }
         return valid;
+    }
+
+    isSessionUser() {
+        let sessionUser = localStorage.getItem('sessionUser');
+        if (!sessionUser) return false;
+        if ( (Date.now() - JSON.parse(sessionUser).timestamp ) < this.expired) return true;
+        localStorage.removeItem('sessionUser');
+        return false;
     }
 
     /**
@@ -538,6 +548,7 @@ class LoginForm {
                 const repJs = await response.json();
 
                 if (typeof repJs.message === 'undefined' && typeof repJs.error === 'undefined') {
+                    repJs.timestamp = Date.now();
                     localStorage.setItem('sessionUser', JSON.stringify(repJs));
                     // this.properties.sessionUser = repJs;// localstorage timestam
                     this.update(event);
@@ -721,6 +732,12 @@ class Modal {
             this.modalBg.remove();
             this.controller.abort();
         }, { signal: this.controller.signal });
+
+        document.querySelector('.modal-bg').addEventListener('click', ev => {
+            if (ev.target.className === 'modal-bg') {
+                document.querySelector('.modal-close').dispatchEvent(new MouseEvent('click'));
+            }
+        }, { signal: this.controller.signal });
     }
 
     cssRules() {
@@ -828,7 +845,7 @@ class ModalGallery {
             event.preventDefault();
             let data = new FormData(event.target);
             let idImg = [...data][0][1];
-            this.properties.deleteWorksId(idImg);
+            await this.properties.deleteWorksId(idImg);
             document.querySelector(`[data-id="${idImg}"]`).remove();
 
             //update gallery

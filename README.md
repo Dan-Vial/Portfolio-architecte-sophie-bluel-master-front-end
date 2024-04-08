@@ -30,7 +30,7 @@ sophie.bluel@test.tld
 ```
 password:
 ```
-S0phie 
+S0phie
 ```
 
 ## Lancement du frontend
