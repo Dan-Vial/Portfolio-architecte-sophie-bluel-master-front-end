@@ -411,6 +411,8 @@ class LoginNav {
                 localStorage.removeItem('sessionUser');
                 this.properties.filter.filterId.classList.toggle('hidden', false);
                 this.properties.modifierBtn.modeEditId.classList.toggle('hidden', true);
+                document.querySelector('.menu-edit-title').classList.toggle('hidden', true);
+
 
                 for (const elm of this.loginId.parentNode.children) {
                     elm.classList.toggle('nav-btn-selected', false);
@@ -429,6 +431,7 @@ class LoginNav {
 
                 this.properties.filter.filterId.classList.toggle('hidden', true);
                 this.properties.modifierBtn.modeEditId.classList.toggle('hidden', false);
+                document.querySelector('.menu-edit-title').classList.toggle('hidden', false);
 
                 this.loginId.textContent = 'Logout';
             }
@@ -550,7 +553,6 @@ class LoginForm {
                 if (typeof repJs.message === 'undefined' && typeof repJs.error === 'undefined') {
                     repJs.timestamp = Date.now();
                     localStorage.setItem('sessionUser', JSON.stringify(repJs));
-                    // this.properties.sessionUser = repJs;// localstorage timestam
                     this.update(event);
                 } else if (typeof repJs.message !== 'undefined') {
                     emailId.setCustomValidity(repJs.message);
@@ -675,6 +677,10 @@ class ModifierBtn {
 
     html() {
         this.modeEditId.classList.toggle('hidden', true);
+
+        this.properties.addHtml(document.querySelector('header'), `<div class="menu-edit-title hidden">
+            <i class="fa-regular fa-pen-to-square"></i> Mode édition
+        </div>`);
     }
 
     js() {
@@ -687,6 +693,20 @@ class ModifierBtn {
             justify-content: center;
             gap: 2em;
             align-items: baseline;
+        }`);
+
+        this.properties.sheet.insertRule(`.menu-edit-title { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: grid;
+            grid-template-columns: auto auto;
+            justify-content: center;
+            gap: 1em;
+            width: 100%;
+            background-color: rgb(0, 0, 0);
+            color: rgb(255, 255, 255);
+            padding: 1em 0;
         }`);
     }
 }
@@ -712,7 +732,6 @@ class Modal {
     html(data) {
         this.properties.addHtml(this.mainId,
             `<section class="modal-bg">
-                <div class="modal-title"><i class="fa-regular fa-pen-to-square"></i> Mode édition</div>
                 <div class="modal">
                     <div class="modal-bar">
                         <div class="modal-back modal-btn"><i class="fa-solid fa-arrow-left"></i></div>
@@ -743,7 +762,6 @@ class Modal {
     cssRules() {
         this.properties.sheet.insertRule(`.modal-bg { 
             display: grid;
-            grid-template-rows: auto 1fr;
             justify-items: center;
             position: fixed;
             z-index: 1;
@@ -763,17 +781,6 @@ class Modal {
             width: 55%;
             margin: auto;
             border-radius: 10px;
-        }`);
-
-        this.properties.sheet.insertRule(`.modal-title { 
-            display: grid;
-            grid-template-columns: auto auto;
-            justify-content: center;
-            gap: 1em;
-            width: 100%;
-            background-color: rgb(0, 0, 0);
-            color: rgb(255, 255, 255);
-            padding: 1em 0;
         }`);
 
         this.properties.sheet.insertRule(`.modal-close {
