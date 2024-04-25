@@ -1,5 +1,5 @@
 'use strict';
-// ----------------------------------------------------------------------------------------------------------------
+
 document.addEventListener('securitypolicyviolation', console.error.bind(console));
 document.addEventListener('DOMContentLoaded', DOMLoaded, true);
 window.addEventListener('load', AllLoaded, true);
@@ -31,7 +31,6 @@ async function AllLoaded(event) {
         console.log('/*** APP error ***/\n', error);
     }
 }
-// ----------------------------------------------------------------------------------------------------------------
 
 class App {
     expired = 86400000; // isSessionUser: 86400000 ms = 24h / 60000 ms = 1m
@@ -50,13 +49,6 @@ class App {
 
     rangeHtml() {
         this.range = document.createRange();
-
-        // Content-Security-Policy: require-trusted-types-for 'script';report-to in chrome using trustedTypes 
-        // trustedTypes not implemented in firefox
-        
-        // this.sanitizer = trustedTypes.createPolicy("mysanitizer", {
-        //     createHTML: input => input, // DOMPurify
-        // });
     }
 
     styleSheetCss() {
@@ -75,7 +67,6 @@ class App {
 
     addHtml(parent, stringHtml) {
         parent.appendChild(this.range.createContextualFragment(stringHtml));
-        // parent.appendChild(this.range.createContextualFragment(this.sanitizer.createHTML(stringHtml)));
     }
 
     reportValidityInForm(elementForm) {
@@ -100,25 +91,22 @@ class App {
     /**
      * Architect API 1.0.0 default
      */
-    async #get(routeName, opts = {}) {
+    async #fetching(routeName, opts = {}) {
         return await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts);
-        // return await (await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts)).json();
     }
 
     async getCategories() {
-        return await (await this.#get('categories')).json();
-        // return await this.#get('categories');
+        return await (await this.#fetching('categories')).json();
     }
 
     async getWorks() {
-        return await ((await this.#get('works')).json());
-        // return await  this.#get('works');
+        return await ((await this.#fetching('works')).json());
     }
 
     async postUsersLogin(email, password) {
         const sessionUser = localStorage.getItem('sessionUser');
         if (!sessionUser) {
-            return await this.#get('users/login', {
+            return await this.#fetching('users/login', {
                 method: 'post',
                 headers: {
                     'accept': 'application/json',
@@ -130,7 +118,7 @@ class App {
                 })
             });
         } else {
-            return await this.#get('users/login', {
+            return await this.#fetching('users/login', {
                 method: 'post',
                 headers: {
                     'accept': 'application/json',
@@ -140,27 +128,23 @@ class App {
         }
     }
 
-    // protected with token 
     async postWorks(data) {
         const sessionUser = localStorage.getItem('sessionUser');
         if (!sessionUser) throw 'Unauthorized post works.';
-        return await this.#get('works', {
+        return await this.#fetching('works', {
             method: 'post',
             headers: {
                 'accept': 'application/json',
                 'Authorization': `Bearer ${JSON.parse(sessionUser).token}`
-                // si défini bug. L'API fetch fait le travail avec FormData.
-                // 'Content-Type': 'multipart/form-data;boundary="mcustomboundary"'
             },
             body: data
         });
     }
 
-    // protected with token 
     async deleteWorksId(id) {
         const sessionUser = localStorage.getItem('sessionUser');
         if (!sessionUser) throw 'Unauthorized delete works.';
-        return await this.#get(`works/${id}`, {
+        return await this.#fetching(`works/${id}`, {
             method: 'delete',
             headers: {
                 'accept': '*/*',
@@ -333,6 +317,7 @@ class Gallery {
             }
         });
 
+        //#filter
         this.works = await this.properties.getWorks();
         this.properties.filter.category.forEach(element => {
             if (element.id === 0) {
@@ -816,7 +801,6 @@ class ModalGallery {
     }
 
     async update(ev) {
-        // this.html(this.properties.gallery.filterWorks['tous']);
         this.html(await this.properties.getWorks());
         this.js();
     }
@@ -855,9 +839,7 @@ class ModalGallery {
             await this.properties.deleteWorksId(idImg);
             document.querySelector(`[data-id="${idImg}"]`).remove();
 
-            //update gallery
             this.properties.gallery.update({ target: { id: 'tous' } });
-
         };
         [...modalGalleryChilds].forEach(element => {
             element.addEventListener('submit', modalGalleryChildsCb, { signal: this.properties.modal.controller.signal });
@@ -987,24 +969,6 @@ class ModalAddPhoto {
         const addImageCb = ev => {
             let file = ev.target.files[0];
 
-            /**
-             * MINIATURE: FileReader to base64
-             */
-            // var reader = new FileReader();
-            // reader.onload = function (evt) {
-            //     let img = document.createElement('img');
-            //     // img.setAttribute('src', `data:${file.type};base64,${btoa(evt.target.result)}`);
-            //     img.setAttribute('src', URL.createObjectURL(file));
-            //     [...addImage.parentElement.children].forEach(element => {
-            //         element.classList.toggle('hidden');
-            //     });
-            //     addImage.parentElement.insertBefore(img, addImage.parentElement.firstElementChild);
-            // };
-            // reader.readAsBinaryString(file);
-
-            /**
-             * MINIATURE: createObjectURL
-             */
             let img = document.createElement('img');
             img.setAttribute('src', URL.createObjectURL(file));
             [...addImage.parentElement.children].forEach(element => {
@@ -1037,8 +1001,6 @@ class ModalAddPhoto {
                 let res = await this.properties.postWorks(data);
                 this.properties.gallery.update({ target: { id: 'tous' } });
                 document.querySelector('.modal-close').dispatchEvent(new MouseEvent('click'));
-
-                // console.log(JSON.stringify(await res.json(), null, '\t'));
             }
 
         }, { signal: this.properties.modal.controller.signal });
