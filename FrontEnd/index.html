@@ -13,18 +13,18 @@
 
 	<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
-        integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
-        crossorigin="anonymous" referrerpolicy="no-referrer">
+		integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
+		crossorigin="anonymous" referrerpolicy="no-referrer">
 	<link rel="stylesheet" href="./assets/style.css">
-	<script defer src="./assets/app.js"></script>
+	<script defer src="./assets/app.js" type="module"></script>
 </head>
 
 <body>
 	<header>
 		<h1>Sophie Bluel <span>Architecte d'intérieur</span></h1>
 		<nav>
-			<ul>
-				<li id="projets-nav">projets</li>
+			<ul id="nav">
+				<li id="portfolio-nav">projets</li>
 				<li id="contact-nav">contact</li>
 				<li id="login-nav">login</li>
 				<li><img src="./assets/icons/instagram.png" alt="Instagram"></li>
@@ -48,7 +48,10 @@
 			</article>
 		</section>
 		<section id="portfolio">
-			<div class="menu-edit"><h2>Mes Projets</h2><div id="mode-edit"><i class="fa-regular fa-pen-to-square"></i> mode édit</div></div>
+			<div class="menu-edit">
+				<h2>Mes Projets</h2>
+				<div id="mode-edit"><i class="fa-regular fa-pen-to-square"></i> mode édit</div>
+			</div>
 			<div id="menu-filter"></div>
 			<div id="gallery" class="gallery"></div>
 		</section>
