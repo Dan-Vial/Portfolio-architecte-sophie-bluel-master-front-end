@@ -4,7 +4,7 @@ class RouteAchitectApi {
     }
 
     static async #fetching(routeName, opts = {}) {
-        return await fetch(`${RouteAchitectApi.urlString}/api/${routeName}`, opts);
+        return await fetch(`${RouteAchitectApi.urlString}/${routeName}`, opts);
     }
 
     static async getCategories() {

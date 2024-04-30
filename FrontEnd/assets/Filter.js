@@ -13,7 +13,14 @@ class Filter {
         this.update();
     }
 
-    async update() {
+    async update(event) {
+        if (this.properties.isSessionUser()) {
+            this.filterId.classList.toggle('hidden', true);
+        }
+        else {
+            this.filterId.classList.toggle('hidden', false);
+        }
+
         this.clear();
         this.category.push({ id: 0, name: 'Tous' });
 

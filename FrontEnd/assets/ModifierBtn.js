@@ -10,10 +10,18 @@ class ModifierBtn {
         this.cssRules();
         this.html();
         this.js();
+        this.update();
     }
 
-    update(ev) {
-        this.properties.modal.update(ev);
+    update(event) {
+        if (this.properties.isSessionUser()) {
+            this.modeEditId.classList.toggle('hidden', false);
+            document.querySelector('.menu-edit-title').classList.toggle('hidden', false);
+        }
+        else {
+            this.modeEditId.classList.toggle('hidden', true);
+            document.querySelector('.menu-edit-title').classList.toggle('hidden', true);
+        }
     }
 
     html() {
@@ -25,7 +33,9 @@ class ModifierBtn {
     }
 
     js() {
-        this.modeEditId.addEventListener('click', this.update.bind(this));
+        this.modeEditId.addEventListener('click', async (event) => {
+            await this.properties.modal.update(event);
+        });
     }
 
     cssRules() {

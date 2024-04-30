@@ -12,15 +12,24 @@ window.addEventListener('load', AllLoaded, true);
 async function AllLoaded(event) {
     console.log(`AllLoaded: ${event.type}`);
     try {
-        route.setApiUrl('http://localhost:5678');
+        route.setApiUrl('http://localhost:5678/api');
         const app = new App();
 
         app.addModule(Base, Filter, Gallery);
         app.addModule(LoginForm, Nav, ModifierBtn);
         app.addModule(Modal, ModalGallery, ModalAddPhoto);
 
-        if (app.isSessionUser()) {
-            app.nav.update(event);
+        const observer = new MutationObserver(observerCb);
+        observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+        function observerCb(mutationsList) {
+            for (const mutation of mutationsList) {
+                if (mutation.target.id === 'gallery') {
+                    if (location.hash) {
+                        document.querySelector(`${location.hash}-nav`).dispatchEvent(new MouseEvent('click'));
+                    }
+                    observer.disconnect();
+                }
+            }
         }
     }
     catch (error) {

@@ -11,6 +11,17 @@ class Base {
         this.cssRules();
     }
 
+    update(event) {
+        let testBool = true;
+        if (this.properties.isSessionUser() || event.type === 'load' || event.type === 'submit' || event.target.id === 'portfolio-nav' || event.target.id === 'contact-nav') {
+            testBool = false;
+        }
+
+        this.introductionId.classList.toggle('hidden', testBool);
+        this.portfolioId.classList.toggle('hidden', testBool);
+        this.contactId.classList.toggle('hidden', testBool);
+    }
+
     cssRules() {
         this.color1 = '#1D6154';
         this.color2 = '#0E2F28';

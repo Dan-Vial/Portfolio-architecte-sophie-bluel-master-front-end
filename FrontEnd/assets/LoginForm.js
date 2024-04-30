@@ -15,7 +15,15 @@ class LoginForm {
     }
 
     update(event) {
-        this.properties.nav.update(event);
+        this.properties.base.update(event);
+
+        let testBool = false;
+        if (event.type === 'load' || event.type === 'submit' || event.target.id === 'portfolio-nav' || event.target.id === 'contact-nav') {
+            testBool = true;
+        }
+
+        this.properties.filter.update(event);
+        this.loginSection.classList.toggle('hidden', testBool);
     }
 
     html() {
@@ -95,6 +103,11 @@ class LoginForm {
                     delete repJs.userId;
                     localStorage.setItem('sessionUser', JSON.stringify(repJs));
                     this.update(event);
+                    this.properties.nav.update(event);
+
+                    document.location.hash = '';
+                    const url = new URL(location);
+                    history.replaceState({}, '', url);
                 }
                 else {
                     this.submit.setCustomValidity('error: e-mail and password');

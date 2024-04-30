@@ -8,49 +8,41 @@ class Nav {
     init() {
         this.cssRules();
         this.js();
+
+        if (this.properties.isSessionUser()) {
+            this.loginId.textContent = 'logout';
+        }
+        else {
+            this.loginId.textContent = 'login';
+        }
     }
 
     update(event) {
-        const switchStatConnected = (elem, testBool) => {
-                this.properties.base.introductionId.classList.toggle('hidden', testBool);
-                this.properties.base.portfolioId.classList.toggle('hidden', testBool);
-                this.properties.base.contactId.classList.toggle('hidden', testBool);
-                this.properties.loginForm.loginSection.classList.toggle('hidden', !testBool);
-
-                for (const elm of elem.parentNode.children) {
-                    elm.classList.toggle('nav-btn-selected', false);
-                }
-
-                elem.classList.toggle('nav-btn-selected', true);
-                location.href = `#${elem.id.split('-')[0]}`;
-            },
-
-            switchStatModeEdit = (elem, tesstBool, nameString) => {
-                this.properties.filter.filterId.classList.toggle('hidden', tesstBool);
-                this.properties.modifierBtn.modeEditId.classList.toggle('hidden', !tesstBool);
-                document.querySelector('.menu-edit-title').classList.toggle('hidden', !tesstBool);
-                elem.textContent = nameString;
-            };
-
-        if (event.target.id === 'portfolio-nav' || event.target.id === 'contact-nav') {
-            switchStatConnected(event.target, false);
+        if (event.target.id === 'login-nav' && event.target.textContent === 'logout') {
+            this.loginId.classList.toggle('nav-btn-selected', false);
+            localStorage.removeItem('sessionUser');
         }
-        else if (!localStorage.getItem('sessionUser')) {
-            switchStatConnected(this.loginId, true);
-            switchStatModeEdit(this.loginId, false, 'Login');
+
+        if (this.properties.isSessionUser()) {
+            this.loginId.textContent = 'logout';
         }
         else {
-            switchStatConnected(this.loginId, false);
-            if (this.loginId.textContent === 'Logout') {
-                switchStatModeEdit(this.loginId, false, 'Login');
-                this.loginId.classList.toggle('nav-btn-selected', false);
-                localStorage.removeItem('sessionUser');
-                document.location.hash = '';
-            }
-            else {
-                switchStatModeEdit(this.loginId, true, 'Logout');
-            }
+            this.loginId.textContent = 'login';
         }
+
+        for (const elm of event.target.parentNode.children) {
+            elm.classList.toggle('nav-btn-selected', false);
+        }
+
+        event.target.classList.toggle('nav-btn-selected', true);
+
+        location.href = `#${event.target.id.split('-')[0]}`;
+        const url = new URL(location);
+        history.replaceState({}, '', url);
+
+        this.properties.base.update(event);
+        this.properties.loginForm.update(event);
+        this.properties.modifierBtn.update(event);
     }
 
     js() {
