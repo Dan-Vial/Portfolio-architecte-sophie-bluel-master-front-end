@@ -19,7 +19,6 @@ class Nav {
 
     update(event) {
         if (event.target.id === 'login-nav' && event.target.textContent === 'logout') {
-            this.loginId.classList.toggle('nav-btn-selected', false);
             localStorage.removeItem('sessionUser');
         }
 
