@@ -80,9 +80,10 @@ class App {
 
     isSessionUser() {
         const sessionUser = localStorage.getItem('sessionUser');
-        if (!sessionUser) { return false; }
-        if ((Date.now() - JSON.parse(sessionUser).timestamp) < this.expired) { return true; }
-        localStorage.removeItem('sessionUser');
-        return false;
+        if (!sessionUser) { 
+            return false; 
+        } else {
+            return true;
+        }
     }
 }

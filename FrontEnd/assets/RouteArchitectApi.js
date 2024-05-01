@@ -19,7 +19,7 @@ class RouteAchitectApi {
         const sessionUser = localStorage.getItem('sessionUser');
 
         if (!sessionUser) {
-            return await RouteAchitectApi.#fetching('users/login', {
+            return await (await RouteAchitectApi.#fetching('users/login', {
                 method: 'post',
                 headers: {
                     'accept': 'application/json',
@@ -29,15 +29,15 @@ class RouteAchitectApi {
                     email,
                     password,
                 }),
-            });
+            })).json();
         }
-        return await RouteAchitectApi.#fetching('users/login', {
+        return await (await RouteAchitectApi.#fetching('users/login', {
             method: 'post',
             headers: {
                 accept: 'application/json',
-                Authorization: `Bearer ${JSON.parse(sessionUser).token}`,
+                Authorization: `Bearer ${sessionUser}`,
             },
-        });
+        })).json();
     }
 
     static async postWorks(data) {
@@ -48,7 +48,7 @@ class RouteAchitectApi {
             method: 'post',
             headers: {
                 accept: 'application/json',
-                Authorization: `Bearer ${JSON.parse(sessionUser).token}`,
+                Authorization: `Bearer ${sessionUser}`,
             },
             body: data,
         });
@@ -62,7 +62,7 @@ class RouteAchitectApi {
             method: 'delete',
             headers: {
                 accept: '*/*',
-                Authorization: `Bearer ${JSON.parse(sessionUser).token}`,
+                Authorization: `Bearer ${sessionUser}`,
             },
         });
     }

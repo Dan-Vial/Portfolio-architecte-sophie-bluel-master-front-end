@@ -95,13 +95,10 @@ class LoginForm {
             event.preventDefault();
 
             if (this.properties.reportValidityInForm(event.target)) {
-                const response = await route.postUsersLogin(emailId.value, passwordId.value),
-                    repJs = await response.json();
+                const response = await route.postUsersLogin(emailId.value, passwordId.value);
 
-                if (typeof repJs.message === 'undefined' && typeof repJs.error === 'undefined') {
-                    repJs.timestamp = Date.now();
-                    delete repJs.userId;
-                    localStorage.setItem('sessionUser', JSON.stringify(repJs));
+                if (typeof response.message === 'undefined' && typeof response.error === 'undefined') {
+                    localStorage.setItem('sessionUser', response.token);
                     this.update(event);
                     this.properties.nav.update(event);
 
