@@ -1,13 +1,13 @@
 'use strict';
-// ----------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 document.addEventListener('securitypolicyviolation', console.error.bind(console));
 document.addEventListener('DOMContentLoaded', DOMLoaded, true);
 window.addEventListener('load', AllLoaded, true);
 
-async function DOMLoaded(event) {
+async function DOMLoaded(_event) {
     console.log('DOMLoaded.');
     if (document.location.hash !== '') {
-        history.pushState("", document.title, window.location.pathname);
+        history.pushState('', document.title, window.location.pathname);
     }
 }
 
@@ -31,7 +31,7 @@ async function AllLoaded(event) {
         console.log('/*** APP error ***/\n', error);
     }
 }
-// ----------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 class App {
     expired = 86400000; // isSessionUser: 86400000 ms = 24h / 60000 ms = 1m
@@ -53,7 +53,7 @@ class App {
 
         // Content-Security-Policy: require-trusted-types-for 'script';report-to in chrome using trustedTypes 
         // trustedTypes not implemented in firefox
-        
+
         // this.sanitizer = trustedTypes.createPolicy("mysanitizer", {
         //     createHTML: input => input, // DOMPurify
         // });
@@ -92,7 +92,7 @@ class App {
     isSessionUser() {
         let sessionUser = localStorage.getItem('sessionUser');
         if (!sessionUser) return false;
-        if ( (Date.now() - JSON.parse(sessionUser).timestamp ) < this.expired) return true;
+        if ((Date.now() - JSON.parse(sessionUser).timestamp) < this.expired) return true;
         localStorage.removeItem('sessionUser');
         return false;
     }
@@ -102,17 +102,14 @@ class App {
      */
     async #get(routeName, opts = {}) {
         return await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts);
-        // return await (await fetch(`${this.protocol}://${this.host}:${this.port}/api/${routeName}`, opts)).json();
     }
 
     async getCategories() {
         return await (await this.#get('categories')).json();
-        // return await this.#get('categories');
     }
 
     async getWorks() {
         return await ((await this.#get('works')).json());
-        // return await  this.#get('works');
     }
 
     async postUsersLogin(email, password) {
@@ -181,22 +178,6 @@ class Base {
         this.portfolioId = document.getElementById('portfolio');
         this.contactId = document.getElementById('contact');
         this.cssRules();
-    }
-
-    update() {
-
-    }
-
-    clear() {
-
-    }
-
-    html() {
-
-    }
-
-    js() {
-
     }
 
     cssRules() {
@@ -438,7 +419,7 @@ class LoginNav {
             }
         }
         if (document.location.hash !== '') {
-            history.pushState("", document.title, window.location.pathname);
+            history.pushState('', document.title, window.location.pathname);
         }
     }
 
@@ -541,8 +522,8 @@ class LoginForm {
     js() {
         let emailId = this.loginForm.querySelector('#email-login');
         let passwordId = this.loginForm.querySelector('#password-login');
-        emailId.addEventListener('change', ev => { emailId.setCustomValidity(''); });
-        passwordId.addEventListener('change', ev => { passwordId.setCustomValidity(''); });
+        emailId.addEventListener('change', _event => { emailId.setCustomValidity(''); });
+        passwordId.addEventListener('change', _event => { passwordId.setCustomValidity(''); });
 
         this.loginForm.addEventListener('submit', async event => {
             event.preventDefault();
@@ -606,7 +587,7 @@ class ContactNav {
         this.js();
     }
 
-    update(ev) {
+    update(_event) {
         this.properties.base.introductionId.classList.toggle('hidden', false);
         this.properties.base.portfolioId.classList.toggle('hidden', false);
         this.properties.base.contactId.classList.toggle('hidden', false);
@@ -638,7 +619,7 @@ class ProjetsNav {
         this.js();
     }
 
-    update(ev) {
+    update(_event) {
         this.properties.base.introductionId.classList.toggle('hidden', false);
         this.properties.base.portfolioId.classList.toggle('hidden', false);
         this.properties.base.contactId.classList.toggle('hidden', false);
@@ -730,7 +711,7 @@ class Modal {
         this.properties.modalGallery.update(ev);
     }
 
-    html(data) {
+    html(_data) {
         this.properties.addHtml(this.mainId,
             `<section class="modal-bg">
                 <div class="modal">
@@ -748,13 +729,13 @@ class Modal {
         this.modalBg = document.querySelector('.modal-bg');
         this.controller = new AbortController();
 
-        document.querySelector('.modal-close').addEventListener('click', ev => {
+        document.querySelector('.modal-close').addEventListener('click', _event => {
             this.modalBg.remove();
             this.controller.abort();
         }, { signal: this.controller.signal });
 
-        document.querySelector('.modal-bg').addEventListener('click', ev => {
-            if (ev.target.className === 'modal-bg') {
+        document.querySelector('.modal-bg').addEventListener('click', event => {
+            if (event.target.className === 'modal-bg') {
                 document.querySelector('.modal-close').dispatchEvent(new MouseEvent('click'));
             }
         }, { signal: this.controller.signal });
@@ -816,7 +797,7 @@ class ModalGallery {
         this.cssRules();
     }
 
-    async update(ev) {
+    async update(_event) {
         // this.html(this.properties.gallery.filterWorks['tous']);
         this.html(await this.properties.getWorks());
         this.js();
@@ -828,7 +809,7 @@ class ModalGallery {
             `<h2>Galerie photo</h2>
             <div id="modal-gallery">
                 ${data.map(value => {
-                return `<div data-id="${value.id}">
+        return `<div data-id="${value.id}">
                         <figure>
                             <img src="${value.imageUrl}" alt="${value.title}">
                         
@@ -840,7 +821,7 @@ class ModalGallery {
                     </div>`;
 
 
-            }).join('')}
+    }).join('')}
             </div>
             <button id="add-project" class="filter-btn filter-btn-selected">Ajouter une photo</button>`
         );
@@ -939,7 +920,7 @@ class ModalAddPhoto {
         this.cssRules();
     }
 
-    async update(ev) {
+    async update(_event) {
         this.html(await this.properties.getCategories());
         this.js();
     }
@@ -968,8 +949,8 @@ class ModalAddPhoto {
                     <option value=""></option>
 
                     ${data.map(value => {
-                return `<option value="${value.id}">${value.name}</option>`;
-            }).join('')}
+        return `<option value="${value.id}">${value.name}</option>`;
+    }).join('')}
 
                 </select>
 
@@ -1033,20 +1014,15 @@ class ModalAddPhoto {
             event.preventDefault();
 
             if (this.properties.reportValidityInForm(event.target)) {
-                let data = new FormData(event.target);
-
-                let res = await this.properties.postWorks(data);
                 this.properties.gallery.update({ target: { id: 'tous' } });
                 document.querySelector('.modal-close').dispatchEvent(new MouseEvent('click'));
-
-                // console.log(JSON.stringify(await res.json(), null, '\t'));
             }
 
         }, { signal: this.properties.modal.controller.signal });
 
         for (const input of formProject) {
-            input.addEventListener('change', event => {
-                let valid = true
+            input.addEventListener('change', _event => {
+                let valid = true;
                 for (const input of formProject) {
                     if (input.value === '') {
                         valid = false;
@@ -1055,9 +1031,9 @@ class ModalAddPhoto {
                 }
 
                 if (valid) {
-                    validerProject.removeAttribute("disabled");
+                    validerProject.removeAttribute('disabled');
                 } else {
-                    validerProject.setAttribute("disabled", '');
+                    validerProject.setAttribute('disabled', '');
                 }
 
             }, { signal: this.properties.modal.controller.signal });

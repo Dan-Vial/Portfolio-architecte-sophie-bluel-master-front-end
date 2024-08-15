@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint FrontEnd/public/*.js",
+    "lint": "eslint . **/www",
     "serverBackEnd": "cd ./Portfolio-architecte-sophie-bluel/Backend/ && npm start",
     "serverFrontEnd": "node ./FrontEnd/bin/www",
     "installBackEnd": "npm install --prefix ./Portfolio-architecte-sophie-bluel/Backend/",
