@@ -1,4 +1,5 @@
 # Portfolio-architecte-sophie-bluel
+
 Créez une page web dynamique avec JavaScript.
 
 Récupéré le REPO exécutez les commandes:
@@ -12,11 +13,12 @@ si vous avez déjat votre backend:
 - `npm install` (option env. dev.)
 
 ## Lancement du backend
+
 Lancer le backend depuis votre terminal 1 instances
 
 - exécutez la commande `npm run serverBackEnd`.
 
-URL pour accédé a l'API: 
+URL pour accédé a l'API:
 [http://localhost:5678/](http://localhost:5678/)
 
 Lien pour voir la documentation Swagger:
@@ -24,19 +26,23 @@ Lien pour voir la documentation Swagger:
 
 **Compte de test pour Sophie Bluel**
 
-email: 
+email:
+
 ```
 sophie.bluel@test.tld
 ```
+
 password:
+
 ```
 S0phie
 ```
 
 ## Lancement du frontend
+
 Lancer le frontend depuis votre terminal 2 instances
 
 - exécutez la commande `npm run serverFrontEnd`.
 
-URL page Web: 
+URL page Web:
 [http://localhost:3000/](http://localhost:3000/)
