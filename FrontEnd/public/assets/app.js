@@ -333,6 +333,7 @@ class Gallery {
             }
         });
 
+        //#filter
         this.works = await this.properties.getWorks();
         this.properties.filter.category.forEach(element => {
             if (element.id === 0) {

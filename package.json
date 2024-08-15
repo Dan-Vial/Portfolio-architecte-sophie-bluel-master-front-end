@@ -10,7 +10,8 @@
     "serverFrontEnd": "node ./FrontEnd/bin/www",
     "installBackEnd": "npm install --prefix ./Portfolio-architecte-sophie-bluel/Backend/",
     "installFrontEnd": "npm install --prefix ./FrontEnd/",
-    "installAll": "npm install; npm run installBackEnd; npm run installFrontEnd"
+    "installAll": "npm install; npm run installBackEnd; npm run installFrontEnd",
+    "resetDbSql": "cp Portfolio-architecte-sophie-bluel/database.sqlite Portfolio-architecte-sophie-bluel/Backend/database.sqlite"
   },
   "keywords": [
     "pageWeb",
